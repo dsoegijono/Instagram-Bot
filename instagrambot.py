@@ -5,16 +5,6 @@ def appendToFile(fileName, text):
     file = open(fileName, "a")
     file.write(text + '\n')
     file.close()
-    
-def getImageURL(subURL):
-    #TODO what if a profile is linked? (no "/p/" in path)
-    if ".jpg" not in subURL and "/media/" not in subURL:
-        if subURL.endswith('#'):
-            subURL = subURL[:-1]
-        if not subURL.endswith('/'):
-            subURL += '/'
-        subURL += "media/?size=l"
-    return subURL
 
 def main():
     config = ConfigParser.ConfigParser()
@@ -24,8 +14,6 @@ def main():
     reddit_password = config.get("reddit", "password")
     imgur_clientId = config.get("imgur", "clientId")
     imgur_key = config.get("imgur", "key")
-    #instagram_clientId = config.get("instagram", "clientId")
-    #instagram_clientSecret = config.get("instagram", "key")
     instagram_accessToken = config.get("instagram", "token")
     
     r = praw.Reddit(user_agent=reddit_userAgent)
@@ -71,7 +59,6 @@ def main():
                     else:
                         subURL = mediaJSON['data']['images']['standard_resolution']['url']
                 
-                #subURL = getImageURL(sub.url)
                 print subreddit + ": " + subURL
                 
                 if isVideo:
@@ -96,7 +83,7 @@ def main():
                         comment += "\n\nCaption: " + caption
                         comment += "\n\n*****\n\n"
                         comment += "*This is a bot that creates imgur mirrors of instagram images (sorry, doesn't work for videos just yet). "
-                        comment += "If I'm not posting the correct image, please PM me. Comments and suggestions appreciated.*\n\n"
+                        comment += "Please PM me for any complaints, comments, or suggestions. Thank you!*\n\n"
                     
                         #print comment
                         sub.add_comment(comment)
