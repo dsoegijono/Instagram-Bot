@@ -1,21 +1,21 @@
 import praw, time, json, requests, ConfigParser
 from instagram.client import InstagramAPI
 
+config = ConfigParser.ConfigParser()
+config.read("config.ini")
+reddit_userAgent = config.get("reddit", "userAgent")
+reddit_username = config.get("reddit", "username")
+reddit_password = config.get("reddit", "password")
+imgur_clientId = config.get("imgur", "clientId")
+imgur_key = config.get("imgur", "key")
+instagram_accessToken = config.get("instagram", "token")
+
 def appendToFile(fileName, text):
     file = open(fileName, "a")
     file.write(text + '\n')
     file.close()
 
 def main():
-    config = ConfigParser.ConfigParser()
-    config.read("config.ini")
-    reddit_userAgent = config.get("reddit", "userAgent")
-    reddit_username = config.get("reddit", "username")
-    reddit_password = config.get("reddit", "password")
-    imgur_clientId = config.get("imgur", "clientId")
-    imgur_key = config.get("imgur", "key")
-    instagram_accessToken = config.get("instagram", "token")
-    
     r = praw.Reddit(user_agent=reddit_userAgent)
     r.login(reddit_username, reddit_password)
     
@@ -40,19 +40,23 @@ def main():
             elif sub.id not in alreadyDone:
                 subURL = sub.url
                 isVideo = False
-                caption = "<no caption>"
+                caption, username, userurl = "", "", ""
                 if ".mp4" in subURL:
                     isVideo = True
                 elif ".jpg" not in subURL:
-                    print subURL
                     temp = requests.get("http://api.instagram.com/oembed?url=" + subURL)
-                    print "RESPONSE STATUS: " + str(temp.status_code)
+                    if temp.status_code == 404:
+                        continue
                     j1 = temp.json()
                     mediaID = j1['media_id']
-                    media = requests.get("https://api.instagram.com/v1/media/" + mediaID + "?access_token=" + instagram_accessToken)
-                    mediaJSON = media.json()
                     if j1['title']:
                         caption = j1['title']
+                    else:
+                        caption = "<no caption>"
+                    username = j1['author_name']
+                    userurl = j1['author_url']
+                    media = requests.get("https://api.instagram.com/v1/media/" + mediaID + "?access_token=" + instagram_accessToken)
+                    mediaJSON = media.json()
                     if mediaJSON['data']['type'] == 'video':
                         isVideo = True
                         subURL = mediaJSON['data']['videos']['standard_resolution']['url']
@@ -63,7 +67,6 @@ def main():
                 
                 if isVideo:
                     #TODO upload video
-                    print "!!! need to upload video!"
                 else:
                     img = requests.post(
                         "https://api.imgur.com/3/upload.json",
@@ -80,7 +83,11 @@ def main():
                         img_link = j['data']['link']
                     
                         comment = "[Imgur mirror](" + img_link +")"
-                        comment += "\n\nCaption: " + caption
+                        if str(username) > 0:
+                            comment += "\n\n"
+                            comment += "[" + username + "](" + userurl + ")"
+                            if str(caption) > 0:
+                                comment += ": " + caption
                         comment += "\n\n*****\n\n"
                         comment += "*This is a bot that creates imgur mirrors of instagram images (sorry, doesn't work for videos just yet). "
                         comment += "Please PM me for any complaints, comments, or suggestions. Thank you!*\n\n"
