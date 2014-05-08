@@ -2,7 +2,7 @@ import praw, time, json, requests, ConfigParser
 from instagram.client import InstagramAPI
 
 config = ConfigParser.ConfigParser()
-config.read("config.ini")
+config.read(os.path.join(os.path.dirname(__file__), r"config.ini"))
 reddit_userAgent = config.get("reddit", "userAgent")
 reddit_username = config.get("reddit", "username")
 reddit_password = config.get("reddit", "password")
