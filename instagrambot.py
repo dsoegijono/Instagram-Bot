@@ -67,6 +67,7 @@ def main():
                 
                 if isVideo:
                     #TODO upload video
+                    print "Need to upload video"
                 else:
                     img = requests.post(
                         "https://api.imgur.com/3/upload.json",
