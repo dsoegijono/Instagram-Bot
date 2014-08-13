@@ -2,7 +2,7 @@ import praw, time, json, requests, ConfigParser
 from instagram.client import InstagramAPI
 
 config = ConfigParser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), r"config.ini"))
+config.read("config.ini")
 reddit_userAgent = config.get("reddit", "userAgent")
 reddit_username = config.get("reddit", "username")
 reddit_password = config.get("reddit", "password")
@@ -25,10 +25,10 @@ def main():
     alreadyDone = [line.rstrip('\n') for line in file.readlines()]
     file.close()
     
-    skippedSubs = ["photoshopbattles", "bicycling", "videos"]
+    skippedSubs = ["photoshopbattles", "bicycling", "videos", "SquaredCircle", "tiara", "tightdresses"]
         
     while True:
-        submissions = r.get_domain_listing("instagram.com", sort="hot", period=None, limit=25)
+        submissions = r.get_domain_listing("instagram.com", sort="top", period="day", limit=50)
         for sub in submissions:
             subreddit = sub.subreddit.display_name
             if subreddit in skippedSubs: #TODO handle each sub differently?
@@ -67,7 +67,7 @@ def main():
                 
                 if isVideo:
                     #TODO upload video
-                    print "Need to upload video"
+                    print ">>> Need to upload video"
                 else:
                     img = requests.post(
                         "https://api.imgur.com/3/upload.json",
@@ -84,10 +84,11 @@ def main():
                         img_link = j['data']['link']
                     
                         comment = "[Imgur mirror](" + img_link +")"
-                        if str(username) > 0:
+                        if len(username) > 0:
                             comment += "\n\n"
-                            comment += "[" + username + "](" + userurl + ")"
-                            if str(caption) > 0:
+                            if len(username) > 0:
+                                comment += "[" + username + "](" + userurl + ")"
+                            if len(caption) > 0:
                                 comment += ": " + caption
                         comment += "\n\n*****\n\n"
                         comment += "*This is a bot that creates imgur mirrors of instagram images (sorry, doesn't work for videos just yet). "
@@ -99,6 +100,8 @@ def main():
                         appendToFile("done.txt", sub.id)
                         
                         time.sleep(5*60)
+        time.sleep(23*60*60)
+
 
 if __name__ == "__main__":
     main()
