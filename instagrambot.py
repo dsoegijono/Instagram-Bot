@@ -15,34 +15,37 @@ def appendToFile(fileName, text):
     file.write(text + '\n')
     file.close()
 
+# def
+
 def main():
     r = praw.Reddit(user_agent=reddit_userAgent)
     r.login(reddit_username, reddit_password)
-    
-    instAPI = InstagramAPI(access_token=instagram_accessToken)
-    
-    file = open("done.txt", "r")
-    alreadyDone = [line.rstrip('\n') for line in file.readlines()]
-    file.close()
-    
-    skippedSubs = ["photoshopbattles", "bicycling", "videos", "SquaredCircle", "tiara", "tightdresses"]
-        
+
+    # instagramAPI = InstagramAPI(access_token=instagram_accessToken)
+
+    # file = open("done.txt", "r")
+    # alreadyDone = [line.rstrip('\n') for line in file.readlines()]
+    # file.close()
+
+    already_done = []
+    skipped_subs = ["photoshopbattles", "bicycling", "videos", "SquaredCircle", "tiara", "tightdresses"]
+
     while True:
         submissions = r.get_domain_listing("instagram.com", sort="top", period="day", limit=50)
         for sub in submissions:
             subreddit = sub.subreddit.display_name
-            if subreddit in skippedSubs: #TODO handle each sub differently?
+            if subreddit in skipped_subs:
                 print ">>> sub skipped: " + subreddit + "\n"
             elif "/p/" not in sub.url and ".jpg" not in sub.url:
                 print ">>> skipped: " + sub.url + " (a profile?)\n"
             elif sub.author == None:
                 print ">>> post has been deleted\n"
-            elif sub.id not in alreadyDone:
+            elif sub.id not in already_done:
                 subURL = sub.url
-                isVideo = False
+                is_video = False
                 caption, username, userurl = "", "", ""
                 if ".mp4" in subURL:
-                    isVideo = True
+                    is_video = True
                 elif ".jpg" not in subURL:
                     temp = requests.get("http://api.instagram.com/oembed?url=" + subURL)
                     if temp.status_code == 404:
@@ -58,14 +61,14 @@ def main():
                     media = requests.get("https://api.instagram.com/v1/media/" + mediaID + "?access_token=" + instagram_accessToken)
                     mediaJSON = media.json()
                     if mediaJSON['data']['type'] == 'video':
-                        isVideo = True
+                        is_video = True
                         subURL = mediaJSON['data']['videos']['standard_resolution']['url']
                     else:
                         subURL = mediaJSON['data']['images']['standard_resolution']['url']
-                
+
                 print subreddit + ": " + subURL
-                
-                if isVideo:
+
+                if is_video:
                     #TODO upload video
                     print ">>> Need to upload video"
                 else:
@@ -79,10 +82,10 @@ def main():
                         }
                     )
                     j = json.loads(img.text)
-                
+
                     if j["success"]:
                         img_link = j['data']['link']
-                    
+
                         comment = "[Imgur mirror](" + img_link +")"
                         if len(username) > 0:
                             comment += "\n\n"
@@ -93,12 +96,12 @@ def main():
                         comment += "\n\n*****\n\n"
                         comment += "*This is a bot that creates imgur mirrors of instagram images (sorry, doesn't work for videos just yet). "
                         comment += "Please PM me for any complaints, comments, or suggestions. Thank you!*\n\n"
-                    
+
                         #print comment
                         sub.add_comment(comment)
-                        alreadyDone.append(sub.id)
-                        appendToFile("done.txt", sub.id)
-                        
+                        already_done.append(sub.id)
+                        # appendToFile("done.txt", sub.id)
+
                         time.sleep(5*60)
         time.sleep(23*60*60)
 
